@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "980333516516",
+    "firebase_url": "https://votingandtallyingapp-default-rtdb.firebaseio.com",
+    "project_id": "votingandtallyingapp",
+    "storage_bucket": "votingandtallyingapp.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:980333516516:android:b8302b5331054464e53ef1",
+        "android_client_info": {
+          "package_name": "com.example.votingandtallyingapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBCIbmk_nnLFhnegkRrdMbVoFComLIAWTk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
