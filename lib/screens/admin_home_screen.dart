@@ -241,6 +241,7 @@ class _AddCandidateDialogState extends State<_AddCandidateDialog> {
                 await FirebaseFirestore.instance.collection('candidates').add({
                   'name': _titleEditingController.text,
                   'position': _subtitleEditingController.text,
+                  'votes': 0,
                   'eventname': widget.electionEvent.title,
                 });
                 Navigator.pop(context);
