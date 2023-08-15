@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:votingandtallyingapp/screens/userselection_screen.dart';
 import 'package:votingandtallyingapp/utils/colors_utils.dart';
@@ -13,76 +15,109 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final events = FirebaseFirestore.instance.collection('events');
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Admin Home'),
-      ),
-     body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              hexStringToColor("CB2B93"),
-              hexStringToColor("9546C4"),
-              hexStringToColor("5E61F4"),
+        appBar: AppBar(
+          title: Text('Admin Home'),
+        ),
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                hexStringToColor("CB2B93"),
+                hexStringToColor("9546C4"),
+                hexStringToColor("5E61F4"),
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(10.0),
+                child: Text(
+                  'Election Events',
+                  style: TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                  stream: events.snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError) {
+                      return Center(child: Text('Error: ${snapshot.error}'));
+                    }
+
+                    if (!snapshot.hasData) {
+                      return Center(child: CircularProgressIndicator());
+                    }
+
+                    return ListView(
+                      children: snapshot.data!.docs
+                          .map((DocumentSnapshot<Map<String, dynamic>> doc) {
+                        final data = doc.data();
+                        final eventName = data?['title'] ?? 'No Name';
+                        final eventDate = data?['subtitle'] ?? 'No Date';
+
+                        return Card(
+                          color: Colors.purple[300],
+                          child: ListTile(
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ElectionScreenAdmin(
+                                  electionEvent: ElectionEvent(
+                                    title: eventName,
+                                    subtitle: eventDate,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            title: Text(eventName),
+                            subtitle: Text(eventDate),
+                          ),
+                        );
+                      }).toList(),
+                    );
+                  },
+                ),
+              ),
             ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
           ),
         ),
-          child: ListView.builder(
-          itemCount: electionEvents.length,
-          itemBuilder: (context, index) {
-            final ElectionEvent event = electionEvents[index];
-            return ListTile(
-              title: Text(event.title),
-              subtitle: Text(event.subtitle),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ElectionScreen(
-                      electionEvent: event,
-                    ),
-                  ),
-                );
-              },
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () async {
+            final ElectionEvent? newEvent = await showDialog(
+              context: context,
+              builder: (context) => _CreateElectionDialog(),
             );
+            if (newEvent != null) {
+              setState(() {
+                electionEvents.add(newEvent);
+              });
+            }
           },
-        ),
-     ),
-      floatingActionButton: FloatingActionButton(
-  onPressed: () async {
-    final ElectionEvent? newEvent = await showDialog(
-      context: context,
-      builder: (context) => _CreateElectionDialog(),
-    );
-    if (newEvent != null) {
-      setState(() {
-        electionEvents.add(newEvent);
-      });
-    }
-  },
-  child: ClipRRect(
-    borderRadius: BorderRadius.circular(8), // Adjust the value as needed
-    child: Container(
-      padding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-      color: Theme.of(context).colorScheme.secondary,
-      child: Text(
-        'Create Event',
-        style: TextStyle(color: Colors.white),
-      ),
-    ),
-  ),
-)
-    );
+          label: const Text(
+            'Create Event',
+            style: TextStyle(color: Colors.white),
+          ),
+        ));
   }
 }
+
 class Candidate {
   final String name;
   final String position;
 
   Candidate({required this.name, required this.position});
 }
+
 class ElectionEvent {
   final String title;
   final String subtitle;
@@ -98,7 +133,8 @@ class _CreateElectionDialog extends StatefulWidget {
 
 class _CreateElectionDialogState extends State<_CreateElectionDialog> {
   final TextEditingController _titleEditingController = TextEditingController();
-  final TextEditingController _subtitleEditingController = TextEditingController();
+  final TextEditingController _subtitleEditingController =
+      TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -109,11 +145,13 @@ class _CreateElectionDialogState extends State<_CreateElectionDialog> {
         children: [
           TextField(
             controller: _titleEditingController,
-            decoration: const InputDecoration(hintText: 'Enter the event title'),
+            decoration:
+                const InputDecoration(hintText: 'Enter the event title'),
           ),
           TextField(
             controller: _subtitleEditingController,
-            decoration: const InputDecoration(hintText: 'Enter the event subtitle'),
+            decoration:
+                const InputDecoration(hintText: 'Enter the event subtitle'),
           ),
         ],
       ),
@@ -123,11 +161,30 @@ class _CreateElectionDialogState extends State<_CreateElectionDialog> {
           child: const Text('Cancel'),
         ),
         ElevatedButton(
-          onPressed: () {
+          onPressed: () async {
             final String title = _titleEditingController.text.trim();
             final String subtitle = _subtitleEditingController.text.trim();
             if (title.isNotEmpty && subtitle.isNotEmpty) {
-              final ElectionEvent newEvent = ElectionEvent(title: title, subtitle: subtitle);
+              try {
+                await FirebaseFirestore.instance.collection('events').add({
+                  'title': title,
+                  'subtitle': subtitle,
+                });
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Event created successfully')),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error creating event')),
+                );
+              }
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Please enter event details')),
+              );
+              final ElectionEvent newEvent =
+                  ElectionEvent(title: title, subtitle: subtitle);
               Navigator.pop(context, newEvent);
             }
           },
@@ -138,22 +195,92 @@ class _CreateElectionDialogState extends State<_CreateElectionDialog> {
   }
 }
 
-class ElectionScreen extends StatefulWidget {
+class _AddCandidateDialog extends StatefulWidget {
   final ElectionEvent electionEvent;
 
-  const ElectionScreen({
+  const _AddCandidateDialog({super.key, required this.electionEvent});
+  @override
+  _AddCandidateDialogState createState() => _AddCandidateDialogState();
+}
+
+class _AddCandidateDialogState extends State<_AddCandidateDialog> {
+  final TextEditingController _titleEditingController = TextEditingController();
+  final TextEditingController _subtitleEditingController =
+      TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Add Candidate'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _titleEditingController,
+            decoration:
+                const InputDecoration(hintText: 'Enter the candidate name'),
+          ),
+          TextField(
+            controller: _subtitleEditingController,
+            decoration:
+                const InputDecoration(hintText: 'Enter the candidate position'),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            final String title = _titleEditingController.text.trim();
+            final String subtitle = _subtitleEditingController.text.trim();
+            if (title.isNotEmpty && subtitle.isNotEmpty) {
+              try {
+                await FirebaseFirestore.instance.collection('candidates').add({
+                  'name': _titleEditingController.text,
+                  'position': _subtitleEditingController.text,
+                  'eventname': widget.electionEvent.title,
+                });
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Candidate added successfully')),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error adding candidate')),
+                );
+              }
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Please enter event details')),
+              );
+              final ElectionEvent newEvent =
+                  ElectionEvent(title: title, subtitle: subtitle);
+              Navigator.pop(context, newEvent);
+            }
+          },
+          child: const Text('Add'),
+        ),
+      ],
+    );
+  }
+}
+
+class ElectionScreenAdmin extends StatefulWidget {
+  final ElectionEvent electionEvent;
+
+  const ElectionScreenAdmin({
     Key? key,
     required this.electionEvent,
   }) : super(key: key);
 
   @override
-  _ElectionScreenState createState() => _ElectionScreenState();
+  _ElectionScreenAdminState createState() => _ElectionScreenAdminState();
 }
 
-class _ElectionScreenState extends State<ElectionScreen> {
-  final TextEditingController _candidateNameController = TextEditingController();
-  final TextEditingController _candidatePositionController = TextEditingController();
-
+class _ElectionScreenAdminState extends State<ElectionScreenAdmin> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -173,84 +300,85 @@ class _ElectionScreenState extends State<ElectionScreen> {
           ),
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.electionEvent.title),
-            SizedBox(height: 20),
-            Text('Candidates: ${widget.electionEvent.candidates.length}'),
-            SizedBox(height: 20),
-            ListView.builder(
-              shrinkWrap: true,
-              itemCount: widget.electionEvent.candidates.length,
-              itemBuilder: (context, index) {
-                final candidate = widget.electionEvent.candidates[index];
-                return ListTile(
-                  title: Text(candidate.name),
-                  subtitle: Text(candidate.position),
-                  trailing: IconButton(
-                    icon: Icon(Icons.delete),
-                    onPressed: () {
-                      setState(() {
-                        widget.electionEvent.candidates.removeAt(index);
-                      });
-                    },
-                  ),
-                );
-              },
+            const Padding(
+              padding: EdgeInsets.all(10.0),
+              child: Text(
+                'Electoral Candidates',
+                style: TextStyle(
+                  fontSize: 30,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
             ),
-            SizedBox(height: 20),
-            TextField(
-              controller: _candidateNameController,
-              decoration: InputDecoration(labelText: 'Candidate Name'),
-            ),
-            TextField(
-              controller: _candidatePositionController,
-              decoration: InputDecoration(labelText: 'Candidate Position'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final String name = _candidateNameController.text.trim();
-                final String position = _candidatePositionController.text.trim();
-                if (name.isNotEmpty && position.isNotEmpty) {
-                  bool candidateExists = widget.electionEvent.candidates.any((candidate) => candidate.name.toLowerCase() == name.toLowerCase());
-
-                  if (candidateExists) {
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: Text('Candidate Already Exists'),
-                        content: Text('A candidate with the same name already exists.'),
-                        actions: [
-                          ElevatedButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
-                            child: Text('OK'),
-                          ),
-                        ],
-                      ),
-                    );
-                  } else {
-                    setState(() {
-                      widget.electionEvent.candidates.add(Candidate(name: name, position: position));
-                      _candidateNameController.clear();
-                      _candidatePositionController.clear();
-                    });
+            Expanded(
+              child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                stream: FirebaseFirestore.instance
+                    .collection('candidates')
+                    .where('eventname', isEqualTo: widget.electionEvent.title)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
                   }
-                }
-              },
-              child: Text('Add Candidate'),
+
+                  if (!snapshot.hasData) {
+                    return Center(child: CircularProgressIndicator());
+                  }
+
+                  return ListView(
+                    children: snapshot.data!.docs
+                        .map((DocumentSnapshot<Map<String, dynamic>> doc) {
+                      final data = doc.data();
+                      final eventName = data?['name'] ?? 'No Name';
+                      final eventDate = data?['position'] ?? 'No Date';
+
+                      return Card(
+                        color: Colors.purple[300],
+                        child: ListTile(
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ElectionScreenAdmin(
+                                electionEvent: ElectionEvent(
+                                  title: eventName,
+                                  subtitle: eventDate,
+                                ),
+                              ),
+                            ),
+                          ),
+                          title: Text('Name: $eventName'),
+                          subtitle: Text('Position: $eventDate'),
+                        ),
+                      );
+                    }).toList(),
+                  );
+                },
+              ),
             ),
           ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          final ElectionEvent? newEvent = await showDialog(
+            context: context,
+            builder: (context) => _AddCandidateDialog(
+              electionEvent: widget.electionEvent,
+            ),
+          );
+        },
+        label: const Text(
+          'Add candidate',
+          style: TextStyle(color: Colors.white),
         ),
       ),
       bottomNavigationBar: const LogoutButton(),
     );
   }
 }
-
-
-
 
 class LogoutButton extends StatelessWidget {
   const LogoutButton({Key? key}) : super(key: key);

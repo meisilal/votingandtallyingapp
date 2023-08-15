@@ -19,11 +19,9 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final TextEditingController _passwordTextController =
-      TextEditingController();
+  final TextEditingController _passwordTextController = TextEditingController();
   final TextEditingController _emailTextController = TextEditingController();
-  final TextEditingController _usernameTextController =
-      TextEditingController();
+  final TextEditingController _usernameTextController = TextEditingController();
   UserType _selectedUserType = UserType.Voter;
 
   @override
@@ -42,14 +40,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
         width: MediaQuery.of(context).size.width,
         height: MediaQuery.of(context).size.height,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-              colors: [
-                hexStringToColor("CB2B93"),
-                hexStringToColor("9546C4"),
-                hexStringToColor("5E61F4")
-              ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter),
+          gradient: LinearGradient(colors: [
+            hexStringToColor("CB2B93"),
+            hexStringToColor("9546C4"),
+            hexStringToColor("5E61F4")
+          ], begin: Alignment.topCenter, end: Alignment.bottomCenter),
         ),
         child: SingleChildScrollView(
           child: Padding(
@@ -77,18 +72,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(
                   height: 20,
                 ),
-                reusableTextField(
-                    "Enter Username", Icons.person_outline, false, _usernameTextController),
+                reusableTextField("Enter Username", Icons.person_outline, false,
+                    _usernameTextController),
                 const SizedBox(
                   height: 20,
                 ),
-                reusableTextField(
-                    "Enter Email id", Icons.lock_outline, true, _emailTextController),
+                reusableTextField("Enter Email id", Icons.lock_outline, false,
+                    _emailTextController),
                 const SizedBox(
                   height: 20,
                 ),
-                reusableTextField(
-                    "Enter Password", Icons.lock_outline, true, _passwordTextController),
+                reusableTextField("Enter Password", Icons.lock_outline, true,
+                    _passwordTextController),
                 SizedBox(
                   height: 20,
                 ),

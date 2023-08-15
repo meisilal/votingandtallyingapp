@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:votingandtallyingapp/screens/userselection_screen.dart';
 import 'package:votingandtallyingapp/utils/colors_utils.dart';
@@ -13,13 +14,13 @@ class VoterHomeScreen extends StatefulWidget {
 class _VoterHomeScreenState extends State<VoterHomeScreen> {
   @override
   Widget build(BuildContext context) {
+    final events = FirebaseFirestore.instance.collection('events');
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Election Events'),
       ),
       body: Container(
-        width: MediaQuery.of(context).size.width,
-        height: MediaQuery.of(context).size.height,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
@@ -31,52 +32,43 @@ class _VoterHomeScreenState extends State<VoterHomeScreen> {
             end: Alignment.bottomCenter,
           ),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ListTile(
-              title: const Text('Election 1'),
-              subtitle: const Text('School of Computing and Informatics'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ElectionScreen(
-                      election: 'Election 1',
+        child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+          stream: events.snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            }
+
+            if (!snapshot.hasData) {
+              return Center(child: CircularProgressIndicator());
+            }
+
+            return ListView(
+              children: snapshot.data!.docs
+                  .map((DocumentSnapshot<Map<String, dynamic>> doc) {
+                final data = doc.data();
+                final eventName = data?['title'] ?? 'No Name';
+                final eventDescription = data?['subtitle'] ?? 'No Date';
+
+                return Card(
+                  color: Colors.purple[300],
+                  child: ListTile(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ElectionScreen(
+                          election: eventName,
+                          description: eventDescription,
+                        ),
+                      ),
                     ),
+                    title: Text(eventName),
+                    subtitle: Text(eventDescription),
                   ),
                 );
-              },
-            ),
-            ListTile(
-              title: const Text('Election 2'),
-              subtitle: const Text('School of Health Sciences'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ElectionScreen(
-                      election: 'Election 2',
-                    ),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              title: const Text('Election 3'),
-              subtitle: const Text('College of Humanities and Social Sciences'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ElectionScreen(
-                      election: 'Election 3',
-                    ),
-                  ),
-                );
-              },
-            ),
-          ],
+              }).toList(),
+            );
+          },
         ),
       ),
       bottomNavigationBar: Row(
@@ -84,7 +76,8 @@ class _VoterHomeScreenState extends State<VoterHomeScreen> {
         children: [
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(context); // Navigate back to the previous screen (UserSelectionScreen)
+              Navigator.pop(
+                  context); // Navigate back to the previous screen (UserSelectionScreen)
             },
             child: const Text('Back to Selection'),
           ),
@@ -98,8 +91,11 @@ class _VoterHomeScreenState extends State<VoterHomeScreen> {
 
 class ElectionScreen extends StatefulWidget {
   final String election;
+  final String description;
 
-  const ElectionScreen({Key? key, required this.election}) : super(key: key);
+  const ElectionScreen(
+      {Key? key, required this.election, required this.description})
+      : super(key: key);
 
   @override
   _ElectionScreenState createState() => _ElectionScreenState();
@@ -113,9 +109,10 @@ class _ElectionScreenState extends State<ElectionScreen> {
         title: Text(widget.election),
       ),
       body: Center(
-        child: Text(widget.election),
+        child: Text(widget.description),
       ),
-      bottomNavigationBar: const LogoutButton(), // Add the LogoutButton to the bottomNavigationBar
+      bottomNavigationBar:
+          const LogoutButton(), // Add the LogoutButton to the bottomNavigationBar
     );
   }
 }

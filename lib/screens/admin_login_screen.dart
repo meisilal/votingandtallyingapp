@@ -18,75 +18,88 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   final TextEditingController _emailTextController = TextEditingController();
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: Container(
-      width: MediaQuery.of(context).size.width,
-      height: MediaQuery.of(context).size.height,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [ 
-      hexStringToColor("CB2B93"),
-      hexStringToColor("9546C4"),
-      hexStringToColor("5E61F4")
-      ], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            20, MediaQuery.of(context).size.height * 0.2, 20, 0),
-          child: Column(
-            children: <Widget>[
-              logoWidget("assets/images/vote.png"),
-              const SizedBox(
-                height: 30,
-              ),
-              reusableTextField("Enter Username", Icons.person_outline, false, _emailTextController),
-
-              const SizedBox(
-                height: 20,
-              ),
-              reusableTextField("Enter Password", Icons.lock_outline, true, _passwordTextController),
-              const SizedBox(
-                height: 5,
-              ),
-              forgetPassword(context),
-              vat_button(context, "Log In", () {
-                FirebaseAuth.instance.signInWithEmailAndPassword(
-                  email: _emailTextController.text, 
-                  password: _passwordTextController.text).then((value) {
-                    Navigator.push(context, 
-                MaterialPageRoute(builder: (context) => AdminHomeScreen()));
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Admin Login"),
+        centerTitle: true,
+        elevation: 0,
+      ),
+      body: Container(
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.height,
+        decoration: BoxDecoration(
+            gradient: LinearGradient(colors: [
+          hexStringToColor("CB2B93"),
+          hexStringToColor("9546C4"),
+          hexStringToColor("5E61F4")
+        ], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+                20, MediaQuery.of(context).size.height * 0.08, 20, 0),
+            child: Column(
+              children: <Widget>[
+                logoWidget("assets/images/vote.png"),
+                const SizedBox(
+                  height: 30,
+                ),
+                reusableTextField("Enter Username", Icons.person_outline, false,
+                    _emailTextController),
+                const SizedBox(
+                  height: 20,
+                ),
+                reusableTextField("Enter Password", Icons.lock_outline, true,
+                    _passwordTextController),
+                const SizedBox(
+                  height: 5,
+                ),
+                forgetPassword(context),
+                vat_button(context, "Log In", () {
+                  FirebaseAuth.instance
+                      .signInWithEmailAndPassword(
+                          email: _emailTextController.text,
+                          password: _passwordTextController.text)
+                      .then((value) {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => AdminHomeScreen()));
                   }).onError((error, stackTrace) {
                     print("Error ${error.toString()}");
                   });
-              }),
-              registerOption()
-            ],
+                }),
+                registerOption()
+              ],
             ),
           ),
-          ),
         ),
-      );
+      ),
+    );
   }
 
-  Row registerOption()  {
+  Row registerOption() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text("Dont have an account?", 
-        style: TextStyle(color: Colors.white70)),
+        const Text("Dont have an account?",
+            style: TextStyle(color: Colors.white70)),
         GestureDetector(
           onTap: () {
-            Navigator.push(context, 
-            MaterialPageRoute(builder: (context) => const RegisterScreen()));
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const RegisterScreen()));
           },
           child: const Text(
-            " Register", 
+            " Register",
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            ),
-          )
+          ),
+        )
       ],
     );
   }
 
-  Widget forgetPassword(BuildContext context){
+  Widget forgetPassword(BuildContext context) {
     return Container(
       width: MediaQuery.of(context).size.width,
       height: 35,
@@ -96,10 +109,10 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
           "Forgot Password?",
           style: TextStyle(color: Colors.white70),
           textAlign: TextAlign.right,
-          ),
-          onPressed: () => Navigator.push(context, 
-          MaterialPageRoute(builder: (context) => const ResetPassword())),
         ),
-      );
-    }
+        onPressed: () => Navigator.push(context,
+            MaterialPageRoute(builder: (context) => const ResetPassword())),
+      ),
+    );
+  }
 }
