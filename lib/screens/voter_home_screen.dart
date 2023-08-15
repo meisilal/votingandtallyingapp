@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:votingandtallyingapp/screens/userselection_screen.dart';
 import 'package:votingandtallyingapp/utils/colors_utils.dart';
-import 'package:votingandtallyingapp/screens/election_screen.dart';
 
 import 'admin_home_screen.dart'; // Import the ElectionScreen
 

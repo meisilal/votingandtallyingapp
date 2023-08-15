@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:votingandtallyingapp/screens/userselection_screen.dart';
 import 'package:votingandtallyingapp/utils/colors_utils.dart';
